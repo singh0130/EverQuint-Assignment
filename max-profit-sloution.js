@@ -1,5 +1,4 @@
 function maxProfit(n) {
-
     const buildings = [
         { name: "T", build: 5, earn: 1500 },
         { name: "P", build: 4, earn: 1000 },
@@ -9,11 +8,10 @@ function maxProfit(n) {
     const memo = {};
 
     function dfs(timeLeft) {
-
         if (timeLeft <= 0) {
             return {
                 profit: 0,
-                counts: { T:0, P:0, C:0 }
+                mixes: new Set(["T: 0 P: 0 C: 0"])
             };
         }
 
@@ -21,53 +19,55 @@ function maxProfit(n) {
             return memo[timeLeft];
         }
 
-        let best = {
-            profit: 0,
-            counts: { T:0, P:0, C:0 }
-        };
+        let bestProfit = 0;
+        let bestMixes = new Set(["T: 0 P: 0 C: 0"]);
 
-        for (let building of buildings) {
+        for (let b of buildings) {
+            if (timeLeft >= b.build) {
+                let remaining = timeLeft - b.build;
+                let currentProfit = remaining * b.earn;
+                let next = dfs(remaining);
+                let totalProfit = currentProfit + next.profit;
 
-            if (timeLeft >= building.build) {
-
-                let remaining =
-                    timeLeft - building.build;
-
-                let currentProfit =
-                    remaining * building.earn;
-
-                let next =
-                    dfs(remaining);
-
-                let totalProfit =
-                    currentProfit +
-                    next.profit;
-
-                if (
-                    totalProfit >
-                    best.profit
-                ) {
-
-                    let newCounts = {
-                        ...next.counts
-                    };
-
-                    newCounts[
-                        building.name
-                    ]++;
-
-                    best = {
-                        profit: totalProfit,
-                        counts: newCounts
-                    };
+                if (totalProfit > bestProfit) {
+                    bestProfit = totalProfit;
+                    bestMixes = new Set();
+                    for (let mix of next.mixes) {
+                        bestMixes.add(incrementMix(mix, b.name));
+                    }
+                } else if (totalProfit === bestProfit && totalProfit > 0) {
+                    for (let mix of next.mixes) {
+                        bestMixes.add(incrementMix(mix, b.name));
+                    }
                 }
             }
         }
 
-        memo[timeLeft] = best;
-
-        return best;
+        const result = { profit: bestProfit, mixes: bestMixes };
+        memo[timeLeft] = result;
+        return result;
     }
 
-    return dfs(n);
+    function incrementMix(mixStr, name) {
+        const parts = mixStr.split(' ');
+        let t = parseInt(parts[1]);
+        let p = parseInt(parts[3]);
+        let c = parseInt(parts[5]);
+        if (name === 'T') t++;
+        if (name === 'P') p++;
+        if (name === 'C') c++;
+        return `T: ${t} P: ${p} C: ${c}`;
+    }
+
+    const res = dfs(n);
+    console.log(`Earnings: $${res.profit}`);
+    if (res.profit > 0) {
+        console.log("Solutions");
+        let idx = 1;
+        for (let sol of res.mixes) {
+            console.log(`${idx++}. ${sol}`);
+        }
+    }
 }
+
+maxProfit(49);
